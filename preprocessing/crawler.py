@@ -7,15 +7,17 @@ Created on Sat Feb  6 12:49:02 2016
 
 import threading  # For main processing thread
 import urllib  # For downloading websites
-import urllib.request
 import urllib.error
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor  # each downloads a website
 from queue import Queue, Empty  # For processing downloaded websites
 
-import linkconstraint as lc  # constraint to which links are allowed in the network
-from webnode import WebNode
-from webparser import WebParser  # parses the downloaded html site and extracts info
-from webnodestore import WebNodeStore  # for permanently saving created WebNodes
+import preprocessing.linkconstraint as lc  # constraint to which links are allowed in the network
+from preprocessing.web.webnet import WebNet
+from preprocessing.web.webnodestore import WebNodeStore  # for permanently saving created WebNodes
+from preprocessing.web.webparser import WebParser  # parses the downloaded html site and extracts info
+
+from preprocessing.web.webnode import WebNode
 
 
 class Crawler:
@@ -24,6 +26,7 @@ class Crawler:
     def __init__(self, max_sites=0, max_workers=2, timeout=30, link_constraint=None):
         self.pending_links = Queue()
         self.pending_websites = Queue()
+        self.web_net = WebNet()
         self.link_constraint = link_constraint
         if self.link_constraint is None:
             self.link_constraint = lc.LinkConstraint()
@@ -36,7 +39,6 @@ class Crawler:
         self.timeout = timeout
         self.links_processor = None
         self.websites_processor = None
-        self.node_store = None
 
     def _is_finished(self):
         return not self.is_crawling or self.has_maximum_sites_processed()
@@ -47,7 +49,6 @@ class Crawler:
     def process_link(self, link):
         if self._is_finished():
             return
-        print("Processing link in thread", threading.current_thread())
         website = Crawler.download_website(link, self.timeout)
         if website is None:
             print("Website", link, "not downloaded")
@@ -59,7 +60,6 @@ class Crawler:
             self, link, website = future.result()
             if self._is_finished():
                 return
-            print("Link got processed, now in thread", threading.current_thread())
             if website is None:
                 # revert and try later
                 print("Website not downloaded, retrying later", link)
@@ -88,7 +88,8 @@ class Crawler:
         try:
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 while not self._is_finished():
-                    # TODO this will submit way too many futures when testing with maxsites>0!
+                    # this will submit many many futures when testing with limited maxsites(>0)
+                    # but they will be ignored!
                     link = self.obtain_new_link()
                     if link is None:
                         return
@@ -104,6 +105,7 @@ class Crawler:
         web_hash = hash(webparser)
         if web_hash in self.already_processed_websites:
             print("Website", link, "already processed (with different url)!")
+            self.web_net.node_add_url(web_hash, link)
             return
         print("Processed", (self.processed_sites_count + 1), ".link", link)
         self.already_processed_websites.add(web_hash)
@@ -112,27 +114,30 @@ class Crawler:
         builder = WebNode.Builder(self.link_constraint)
         builder.init_from_webparser(webparser)
         webnode = builder.make_node()
-        self.node_store.save_webnodes(webnode)
+        self.web_net.add_node(webnode)
         for link in webnode.get_out_links():
             self.add_link(link)
 
     def process_websites(self, clear_store):
         # We are required to open the store in the same thread the store is modified in
         print("Starting to process websites in thread", threading.current_thread())
-        self.node_store = WebNodeStore(clear_store)
-        self.node_store.open()
-        try:
-            while not self._is_finished():
-                data = self.pending_websites.get(block=True)
-                if data is None:
-                    return
-                link, website = data
-                self.process_website(link, website)
-        finally:
-            self.node_store.close()
-            self.stop()  # ensure crawler is really stopped
+        with WebNodeStore(clear_store) as node_store:
+            try:
+                while not self._is_finished():
+                    data = self.pending_websites.get(block=True)
+                    if data is None:
+                        break
+                    link, website = data
+                    self.process_website(link, website)
+                node_store.save_webnodes(self.web_net.get_nodes())
+            finally:
+                self.stop()  # ensure crawler is really stopped
 
-    def start(self, start_url, clear_store = True):
+    def join(self):
+        self.websites_processor.join()
+        self.links_processor.join()
+
+    def start(self, start_url, clear_store=True):
         print("Starting crawling at", start_url)
         self.is_crawling = True
         self.add_link(self.link_constraint.normalize(start_url))
@@ -169,5 +174,8 @@ if __name__ == "__main__":
     for prefix in ['.png', '.jpg', '.jpeg', '.pdf', '.ico', '.doc', '.txt']:
         constraint.add_rule(lambda link: not link.lower().endswith(prefix))
 
-    c = Crawler(max_sites=10, link_constraint=constraint)
+    c = Crawler(max_sites=12, link_constraint=constraint)
     c.start("http://www.math.kit.edu")
+    c.join()
+    webnet = c.web_net
+    print("DONE, webnet contains", len(webnet), "nodes")

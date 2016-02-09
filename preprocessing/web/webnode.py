@@ -10,10 +10,10 @@ its importance in the total network.
 """
 
 
+_DEFAULT_IMPORTANCE = -1
 class WebNode:
-    _DEFAULT_IMPORTANCE = -1
 
-    def __init__(self, urls, content, out_links, language, node_id = None, importance=_DEFAULT_IMPORTANCE):
+    def __init__(self, urls, content, out_links, language, node_id=None, importance=_DEFAULT_IMPORTANCE):
         self.urls = urls
         self.content = content
         self.out_links = out_links
@@ -23,6 +23,9 @@ class WebNode:
         if urls is None or len(urls) == 0 or content is None or len(content) == 0:
             raise ValueError("No urls or content given for WebNode!")
         print("Initialized WebNode:", urls, language, importance)
+
+    def add_url(self, url):
+        self.urls.append(url)
 
     def get_out_links(self):
         return self.out_links
@@ -49,13 +52,14 @@ class WebNode:
         return hash(self.content)
 
     class Builder:
-        def __init__(self, link_constraint):
+        def __init__(self, link_constraint, urls=None, content=None, out_links=None, language=None,
+                     importance=_DEFAULT_IMPORTANCE):
             self.link_constraint = link_constraint
-            self.urls = None
-            self.content = None
-            self.out_links = None
-            self.language = None
-            self.importance = WebNode._DEFAULT_IMPORTANCE
+            self.urls = urls
+            self.content = content
+            self.out_links = out_links
+            self.language = language
+            self.importance = importance
 
         def init_from_webparser(self, webparser):
             self.urls = [webparser.get_url()]
@@ -64,12 +68,5 @@ class WebNode:
             self.out_links = [link for link in self.out_links if link is not None]
             self.language = webparser.get_language()
 
-        def add_url(self, url):
-            if url is None:
-                return
-            if self.urls is None:
-                self.urls = []
-            self.urls.append(url)
-
         def make_node(self):
-            return WebNode(self.urls, self.content, self.out_links, self.language, importance = self.importance)
+            return WebNode(self.urls, self.content, self.out_links, self.language, importance=self.importance)

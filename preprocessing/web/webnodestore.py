@@ -24,11 +24,13 @@ class WebNodeStore:
                     format(tn=WebNodeStore._TABLE_NAME))
         cur.close()
 
+    # TODO allow loading of webnodes and building a webnet of loaded nodes
     def save_webnodes(self, nodes):
         try:
             nodes_iter = iter(nodes)
         except TypeError:
-            nodes_iter = [nodes]  # Not iterable
+            # Not iterable
+            nodes_iter = [nodes]
         cur = self.con.cursor()
         for node in nodes_iter:
             self._save_node(cur, node)
