@@ -29,12 +29,12 @@ _LETTER_DISTRIBUTIONS = {'de': np.array((6.51, 1.89, 3.06, 5.08, 17.4, 1.66, 3.0
                                         2.361, 0.150, 1.974, 0.074, 0, 0, 0, 0)) / 100}
 
 
-def _guess_language(self):
+def _guess_language(text):
     distribution = np.zeros(_LETTER_DISTRIBUTION_LENGTH)
-    content = "".join(self.content).upper()
+    content = "".join(text).upper()
     total_count = len(content)
     for index in range(0, total_count):
-        letter_index = self._letter_index(content[index])
+        letter_index = _letter_index(content[index])
         if 0 <= letter_index < _LETTER_DISTRIBUTION_LENGTH:
             distribution[letter_index] += 1
     distribution /= total_count

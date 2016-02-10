@@ -2,6 +2,8 @@
 import sqlite3 as lite
 import os
 
+from preprocessing.web.node import WebNode
+
 
 class WebNodeStore:
     _SEPARATOR = "|||||"
@@ -24,7 +26,23 @@ class WebNodeStore:
                     format(tn=WebNodeStore._TABLE_NAME))
         cur.close()
 
-    # TODO allow loading of webnodes and building a webnet of loaded nodes
+    def load_webnodes(self):
+        old_factory = self.con.row_factory
+        self.con.row_factory = lite.Row  # Dictionary cursor
+
+        nodes = []
+        cur = self.con.cursor()
+        cur.execute("SELECT * from {tn}".format(tn=WebNodeStore._TABLE_NAME))
+        for row in cur.fetchall():
+            builder = WebNode.Builder(link_constraint=None,
+                                      language=row["Language"], importance=row["Importance"], node_id=row["Id"])
+            builder.urls = row["Urls"].split(WebNodeStore._SEPARATOR)
+            builder.content = row["Content"].split(WebNodeStore._SEPARATOR)
+            builder.out_links = row["OutLinks"].split(WebNodeStore._SEPARATOR)
+            nodes.append(builder.make_node())
+        self.con.row_factory = old_factory
+        return nodes
+
     def save_webnodes(self, nodes):
         try:
             nodes_iter = iter(nodes)
@@ -50,6 +68,7 @@ class WebNodeStore:
                 command = "INSERT INTO {tn} (Urls, Content, OutLinks, Language, Importance)\
                         VALUES (?, ?, ?, ?, ?)".format(tn=WebNodeStore._TABLE_NAME)
                 cur.execute(command, (urls, ctn, ol, l, imp))
+                node.set_node_id(cur.lastrowid)
             else:
                 command = "UPDATE {tn} SET Urls=?, Content=?, OutLinks=?, Language=?, Importance=?\
                         WHERE Id=?".format(tn=WebNodeStore._TABLE_NAME)

@@ -12,12 +12,11 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor  # each downloads a website
 from queue import Queue, Empty  # For processing downloaded websites
 
-import preprocessing.linkconstraint as lc  # constraint to which links are allowed in the network
-from preprocessing.web.webnet import WebNet
-from preprocessing.web.webnodestore import WebNodeStore  # for permanently saving created WebNodes
-from preprocessing.web.webparser import WebParser  # parses the downloaded html site and extracts info
-
-from preprocessing.web.webnode import WebNode
+import preprocessing.crawl.linkconstraint as lc  # constraint to which links are allowed in the network
+from preprocessing.web.net import WebNet
+from preprocessing.web.node import WebNode
+from preprocessing.web.nodestore import WebNodeStore  # for permanently saving created WebNodes
+from preprocessing.web.parser import WebParser  # parses the downloaded html site and extracts info
 
 
 class Crawler:

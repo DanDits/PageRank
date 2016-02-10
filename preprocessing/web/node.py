@@ -9,7 +9,6 @@ its importance in the total network.
 @author: daniel
 """
 
-
 _DEFAULT_IMPORTANCE = -1
 class WebNode:
 
@@ -29,6 +28,9 @@ class WebNode:
 
     def get_out_links(self):
         return self.out_links
+
+    def set_node_id(self, node_id):
+        self.node_id = node_id
 
     def get_node_id(self):
         return self.node_id
@@ -53,13 +55,14 @@ class WebNode:
 
     class Builder:
         def __init__(self, link_constraint, urls=None, content=None, out_links=None, language=None,
-                     importance=_DEFAULT_IMPORTANCE):
+                     importance=_DEFAULT_IMPORTANCE, node_id = None):
             self.link_constraint = link_constraint
             self.urls = urls
             self.content = content
             self.out_links = out_links
             self.language = language
             self.importance = importance
+            self.node_id = node_id
 
         def init_from_webparser(self, webparser):
             self.urls = [webparser.get_url()]
@@ -69,4 +72,5 @@ class WebNode:
             self.language = webparser.get_language()
 
         def make_node(self):
-            return WebNode(self.urls, self.content, self.out_links, self.language, importance=self.importance)
+            return WebNode(self.urls, self.content, self.out_links, self.language,
+                           node_id=self.node_id, importance=self.importance)
