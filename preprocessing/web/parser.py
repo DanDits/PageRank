@@ -10,8 +10,16 @@ class WebParser:
     def __init__(self, base_link, website_raw):
         self.base_link = base_link
         self.soup = BeautifulSoup(website_raw, "html.parser")
+        self.check_valid()
         self.links_in_scripts = []
         self.content = self._parse_content()
+
+    def check_valid(self):
+        html = str(self.soup)
+        if (html is None or html.find("<html") < 0 or
+                not hasattr(self.soup, "body") or
+                self.soup.body is None or not hasattr(self.soup, "html") or self.soup.html is None):
+            raise ValueError("Given website is not valid html website.")
 
     def get_url(self):
         return self.base_link
@@ -19,8 +27,13 @@ class WebParser:
     def get_content(self):
         return self.content
 
+    def get_title(self):
+        title = self.soup.html.title
+        return title.getText() if title is not None else ''
+
     def get_language(self):
-        return self.soup.find(attrs={"lang": True})["lang"]
+        lang_tag = self.soup.find(attrs={"lang": True})
+        return lang_tag["lang"] if lang_tag is not None else ''
 
     def get_web_links(self):
         href_urls = (link.get("href") for link in self.soup.find_all("a"))
@@ -28,7 +41,13 @@ class WebParser:
         return [self._get_resolved_link(url) for url in href_urls if url is not None]  # filter NoneTypes and resolve
 
     def __hash__(self):
-        return hash(self.content)
+        return WebParser.hash_content(self.content)
+
+    @staticmethod
+    def hash_content(content):
+        if content is None:
+            return
+        return hash("".join(content))
 
     def __eq__(self, other):
         return self.content == other.content
@@ -54,11 +73,11 @@ class WebParser:
 
     # Match <a href="SOMELINK" >
     # allow ' instead of ", capture SOMELINK and allow and ignore other attributes of 'a'
-    _LINK_REGEX = '''<a(?:.[^<>]+)href\s*=\s*['"](.[^'"]+)['"](?:.[^<>]*)>'''
+    _REGEX_LINK = re.compile('''<a(?:.[^<>]+)href\s*=\s*['"](.[^'"]+)['"](?:.[^<>]*)>''')
 
     @staticmethod
     def find_hrefs(text):
-        return re.findall(WebParser._LINK_REGEX, text)
+        return WebParser._REGEX_LINK.findall(text)
 
 if __name__ == "__main__":
     test_url = "http://www.math.kit.edu"
@@ -68,6 +87,8 @@ if __name__ == "__main__":
     print("Parser content:")
     for c in parser.get_content():
         print(c)
+    print("Title:", parser.get_title())
     print("Parser web links:")
     for web_link in parser.get_web_links():
         print(web_link)
+    print("Language:", parser.get_language())
