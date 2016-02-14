@@ -28,7 +28,6 @@ class WebNode:
         if node_id is None and (content is None or len(content) == 0):
             raise ValueError("No node id and no content, node cannot be valid!")
         self._content_hash = WebParser.hash_content(self.content)
-        print("Initialized WebNode:", self)
 
     def add_url(self, url):
         self.urls.append(url)
@@ -74,6 +73,9 @@ class WebNode:
     def __str__(self):
         return ("id: " + str(self.node_id) + ", urls: " + str(self.urls) +
                 ", lang: " + str(self.language) + ", importance: " + str(self.importance))
+
+    def __repr__(self):
+        return "id: " + str(self.node_id) + ",  url:" + str(self.urls[0]) + ", importance: " + str(self.importance)
 
     class Builder:
         def __init__(self, link_constraint, urls=None, content=None, out_links=None, language=None,

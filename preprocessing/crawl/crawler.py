@@ -23,7 +23,7 @@ from preprocessing.web.parser import WebParser  # parses the downloaded html sit
 class Crawler:
     # Initializes the Crawler. If max_sites is greater than zero it will only
     # download this many sites and stop afterwards, else until no new site is found.
-    def __init__(self, store_path, max_sites=0, max_workers=2, timeout=30, link_constraint=None):
+    def __init__(self, store_path, link_constraint, max_sites=0, max_workers=2, timeout=30):
         self.store_path = store_path
         self.pending_links = Queue()
         self.pending_websites = Queue()
@@ -106,7 +106,7 @@ class Crawler:
             self.stop()  # ensure crawler is really stopped
 
     def process_website(self, link, website):
-        print("Starting to parse", link)
+        print("Starting to parse", link, "pending links", self.pending_links.qsize())
         try:
             webparser = WebParser(link, website)
         except ValueError:
@@ -242,7 +242,7 @@ def crawl_mathy():
 
     # Start the crawler from a start domain, optionally loading already existing nodes
     path = "webnodes.db"
-    c = Crawler(path, max_sites=0, link_constraint=constraint)
+    c = Crawler(path, constraint)
     c.start("http://www.math.kit.edu", clear_store=False)
 
     # Wait for the crawler to finish

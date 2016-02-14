@@ -9,5 +9,5 @@ if webnet is not None and webnet.all_nodes_have_id():
     ranker = BaseRanker()
     print("Starting ranking webnet.")
     ranker.rank(webnet)
-    with WebNodeStore(database_path=path, clear=False) as store:
+    with WebNodeStore(database_path=path) as store:
         store.save_webnodes(webnet.get_nodes())
