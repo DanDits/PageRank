@@ -25,8 +25,8 @@ def search(store, query):
         print("\t" + result.get_context(index))
         print("\n")
 
-
-with WebNodeStore("/home/daniel/PycharmProjects/PageRank/webnodes.db") as store:
+from config import DATABASE_PATH
+with WebNodeStore(DATABASE_PATH) as store:
     while command != 'E':
         try:
             command = input("Enter command: E(xit), S(earch:) text, M(ax output:) number,"
@@ -35,7 +35,7 @@ with WebNodeStore("/home/daniel/PycharmProjects/PageRank/webnodes.db") as store:
             command = 'E'
         if command.startswith('S '):
             print("Hint: in query use 'lang:de site:www.math.kit.edu/lehre' to only show german results "
-                  "and from the given domain")
+                  "and from the given domain\n\tUse 'AND'/'OR' to connect keywords")
             search(store, command[2:])
         elif command.startswith('M '):
             max_output = safe_to_int(command[2:], max_output)

@@ -117,7 +117,8 @@ if __name__ == "__main__":
     print("Starting ranking webnet.")
     from preprocessing.web.nodestore import WebNodeStore
     from preprocessing.web.net import WebNet
-    with WebNodeStore(database_path="/home/daniel/PycharmProjects/PageRank/webnodes.db") as store:
+    from config import DATABASE_PATH
+    with WebNodeStore(database_path=DATABASE_PATH) as store:
         loaded_webnet = WebNet()
         for loaded_node in store.load_webnodes(load_content=False):
             loaded_webnet.add_node(loaded_node)

@@ -1,0 +1,1 @@
+DATABASE_PATH = '/home/daniel/PycharmProjects/PageRank/webnodes.db'

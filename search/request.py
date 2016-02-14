@@ -105,7 +105,8 @@ class Request:
 
 if __name__ == "__main__":
     from preprocessing.web.nodestore import WebNodeStore
-    with WebNodeStore("/home/daniel/PycharmProjects/PageRank/webnodes.db") as store:
+    from config import DATABASE_PATH
+    with WebNodeStore(DATABASE_PATH) as store:
         request = Request(store)
         result = request.execute("IWRMM lang:de")
         for index in range(0, len(result)):

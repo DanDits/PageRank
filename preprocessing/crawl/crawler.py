@@ -241,7 +241,8 @@ def crawl_mathy():
     constraint.add_rule(rule_no_point_in_last_path_segment, parsed_link=True)
 
     # Start the crawler from a start domain, optionally loading already existing nodes
-    path = "webnodes.db"
+    from config import DATABASE_PATH
+    path = DATABASE_PATH
     c = Crawler(path, constraint)
     c.start("http://www.math.kit.edu", clear_store=False)
 
