@@ -24,13 +24,13 @@ def search(store, query, language, starturl, max_output):
         print("\n")
 
 
-def start():
+def start(database_path=DATABASE_PATH):
 
     command = ''
     max_output = 10
     language = ''
     starturl = ''
-    with WebNodeStore(DATABASE_PATH) as store:
+    with WebNodeStore(database_path) as store:
         while command != 'E':
             try:
                 command = input("Enter command: E(xit), S(earch:) text, M(ax output:) number,"
