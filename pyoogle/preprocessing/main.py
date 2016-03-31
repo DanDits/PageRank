@@ -1,5 +1,5 @@
-from .crawl.crawler import crawl_mathy
-from .web.nodestore import WebNodeStore
+from pyoogle.preprocessing.crawl.crawler import crawl_mathy
+from pyoogle.preprocessing.web.nodestore import WebNodeStore
 
 
 path, webnet = crawl_mathy()

@@ -5,7 +5,9 @@ import os
 from .node import WebNode
 
 
-VALID_KEYWORDS = ("OR", "AND")
+VALID_KEYWORDS = ("OR", "AND", "NOT")
+
+
 class WebNodeStore:
     _SEPARATOR = "<=_|_=>"
     _TABLE_NAME = "WebNodes"
@@ -27,9 +29,7 @@ class WebNodeStore:
                     format(tn=WebNodeStore._TABLE_NAME))
         cur.close()
 
-    def query(self, keywords, keyword_joins, language=None, start_url=None):
-        if keyword_joins is None or len(keyword_joins) == 0:
-            keyword_joins = ["OR"]  # by default search for any keyword
+    def query(self, request_tree, language=None, start_url=None):
         with DictCursor(self.con) as cur:
             nodes = []
             where_clause = ' WHERE'
@@ -46,27 +46,54 @@ class WebNodeStore:
                 where_clause += where_join_word + "Urls like ?"
                 where_parameters.append("%" + start_url + "%")
                 where_join_word = " AND "
-            if keywords is not None and len(keywords) > 0:
+            if request_tree is not None and len(request_tree) > 0:
                 use_where = True
-                where_clause += where_join_word + "("
-                where_join_word = " "
-                for index, word in enumerate(keywords):
-                    where_clause += where_join_word + " (Content like ? OR Title like ?)"
-                    where_parameters.append("%" + word + "%")
-                    where_parameters.append("%" + word + "%")
-                    join_word = "OR"  # default
-                    if index < len(keyword_joins) and keyword_joins[index] is not None:
-                        join_word = keyword_joins[index].strip()
-                    if join_word not in VALID_KEYWORDS:  # important to filter non valid join words!!!
-                        join_word = "OR"
-                    where_join_word = " " + join_word + " "
-                where_clause += ")"
+                where_clause += where_join_word
+                where_join_words = []
+
+                def get_where_join(join_words):
+                    count = len(join_words)
+                    if count == 0 or count > 2:
+                        return "OR"  # default
+                    if count == 1:
+                        if join_words[0] == "NOT":
+                            return "AND NOT"
+                        return join_words[0]
+                    if count == 2:
+                        result = " ".join(join_words)
+                        if result == "AND NOT" or result == "OR NOT":
+                            return result
+                        return "OR"  # default
+
+                def tree_to_where_clause(curr, needs_join):
+                    nonlocal where_join_words
+                    nonlocal where_clause
+                    if isinstance(curr, list):
+                        if needs_join:
+                            where_clause += " " + get_where_join(where_join_words) + " "
+                        where_clause += "("
+                        where_join_words = []
+                        for index, child in enumerate(curr):
+                            tree_to_where_clause(child, index > 0)
+                        where_clause += ")"
+                    else:
+                        if curr in VALID_KEYWORDS:
+                            where_join_words.append(curr)
+                        else:
+                            if needs_join:
+                                where_clause += " " + get_where_join(where_join_words) + " "
+                            where_clause += "(Content like ? OR Title like ?)"
+                            where_join_words = []
+                            where_parameters.append("%" + curr + "%")
+                            where_parameters.append("%" + curr + "%")
+                tree_to_where_clause(request_tree, False)
                 # noinspection PyUnusedLocal
                 where_join_word = " AND "
             if not use_where:
                 where_clause = ''
 
             command = "SELECT * from {tn}" + where_clause + " ORDER BY Importance Desc"
+            print("Executing command", command, " with parameters", where_parameters)
             cur.execute(command.format(tn=WebNodeStore._TABLE_NAME), tuple(where_parameters))
             for row in cur.fetchall():
                 nodes.append(WebNodeStore._build_node(row, True))
