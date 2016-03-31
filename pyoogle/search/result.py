@@ -48,4 +48,7 @@ class Result:
             return ''
         start_index = max(content_index - chars_delta, 0)
         end_index = min(len(content), content_index + chars_delta)
-        return content[start_index:end_index]
+        prefix = ''
+        if start_index > 0:
+            prefix = "..."
+        return prefix + content[start_index:end_index]

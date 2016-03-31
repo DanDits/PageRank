@@ -52,3 +52,4 @@ def start(database_path=DATABASE_PATH):
 
 if __name__ == "__main__":
     start()
+    #Interesting query example: ((johannes AND numerik) OR ernesti) AND NOT ernestina lang:de

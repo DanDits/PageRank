@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>706</width>
+    <height>434</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Pyoogle Search</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="title">
+        <string>Was suchst du?</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
+       </property>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0" colspan="2">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLineEdit" name="text_query">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCommandLinkButton" name="btn_search">
+            <property name="text">
+             <string>Los</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>z.B.: (Huhn OR Ei) AND NOT Witz</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QCheckBox" name="checkBox">
+          <property name="text">
+           <string>Einstellungen zeigen</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="box_settings">
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Sprache</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Nur Unterseiten von</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="text_start_url"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QListWidget" name="list_language">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>140</width>
+            <height>80</height>
+           </size>
+          </property>
+          <item>
+           <property name="text">
+            <string>Beliebig</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Eigenes Kürzel</string>
+           </property>
+           <property name="flags">
+            <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Deutsch(de)</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Englisch(en)</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QListView" name="list_results"/>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>box_settings</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>417</x>
+     <y>92</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>212</x>
+     <y>126</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn_search</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>start_search()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>565</x>
+     <y>54</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>544</x>
+     <y>6</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>text_query</sender>
+   <signal>returnPressed()</signal>
+   <receiver>Dialog</receiver>
+   <slot>start_search()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>149</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>420</x>
+     <y>4</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>text_start_url</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>Dialog</receiver>
+   <slot>set_start_url(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>398</x>
+     <y>200</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>705</x>
+     <y>176</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>list_language</sender>
+   <signal>itemSelectionChanged()</signal>
+   <receiver>Dialog</receiver>
+   <slot>update_language()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>61</x>
+     <y>174</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>2</x>
+     <y>170</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>start_search()</slot>
+  <slot>set_start_url(QString)</slot>
+  <slot>update_language()</slot>
+ </slots>
+</ui>

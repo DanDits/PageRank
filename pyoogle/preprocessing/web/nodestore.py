@@ -21,12 +21,19 @@ class WebNodeStore:
         self.con = None
         self.create_db = not exists
         self.cur = None
+        self.column_to_types = {"Id": "INTEGER PRIMARY KEY",
+                                "Urls": "TEXT",
+                                "Content": "TEXT",
+                                "OutLinks": "TEXT",
+                                "Language": "TEXT",
+                                "Importance": "INTEGER",
+                                "Title": "TEXT"}
 
     def _create(self):
+        cols_creation = ", ".join((key + " " + self.column_to_types[key] for key in self.column_to_types))
         cur = self.con.cursor()
-        cur.execute("CREATE TABLE {tn}(Id INTEGER PRIMARY KEY, Urls TEXT, Content TEXT, OutLinks TEXT, \
-            Language TEXT, Importance INTEGER, Title TEXT)".
-                    format(tn=WebNodeStore._TABLE_NAME))
+        cur.execute("CREATE TABLE {tn}({cols})".
+                    format(tn=WebNodeStore._TABLE_NAME, cols=cols_creation))
         cur.close()
 
     def query(self, request_tree, language=None, start_url=None):
@@ -56,8 +63,6 @@ class WebNodeStore:
                     if count == 0 or count > 2:
                         return "OR"  # default
                     if count == 1:
-                        if join_words[0] == "NOT":
-                            return "AND NOT"
                         return join_words[0]
                     if count == 2:
                         result = " ".join(join_words)
@@ -93,7 +98,6 @@ class WebNodeStore:
                 where_clause = ''
 
             command = "SELECT * from {tn}" + where_clause + " ORDER BY Importance Desc"
-            print("Executing command", command, " with parameters", where_parameters)
             cur.execute(command.format(tn=WebNodeStore._TABLE_NAME), tuple(where_parameters))
             for row in cur.fetchall():
                 nodes.append(WebNodeStore._build_node(row, True))
@@ -102,14 +106,15 @@ class WebNodeStore:
     def load_webnodes(self, load_content=True):
         with DictCursor(self.con) as cur:
             nodes = []
-            if load_content:
-                command = "SELECT * from {tn}"
-            else:
-                command = "SELECT Id, Urls, OutLinks, Language, Importance, Title from {tn}"
-            cur.execute(command.format(tn=WebNodeStore._TABLE_NAME))
+            command = "SELECT {cols} from {tn}"
+            cur.execute(command.format(tn=WebNodeStore._TABLE_NAME,
+                                       cols=", ".join(self._get_column_names(load_content))))
             for row in cur.fetchall():
                 nodes.append(WebNodeStore._build_node(row, load_content))
             return nodes
+
+    def _get_column_names(self, include_content=True):
+        return [col for col in self.column_to_types if include_content or col != "Content"]
 
     @staticmethod
     def _build_node(row, load_content):

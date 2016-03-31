@@ -15,6 +15,7 @@ class Request:
     def set_language(self, language):
         if language is None:
             language = ''
+        print("Setting language to", language)
         self.language = language
         return True
 
