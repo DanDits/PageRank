@@ -60,6 +60,7 @@ class MyDialog(WindowBaseClass, Ui_MainWindow):
     def show_result(self):
         result = self.result
         model = QStandardItemModel(self.list_results)
+        print("Showing results", len(result))
         for index in range(min(len(result), self.max_results)):
             node = result.get_node(index)
             context = result.get_context(index)

@@ -32,7 +32,7 @@ class Result:
         node_content = self._get_nice_content(node)
 
         separator = " "
-        chars_delta = 80
+        chars_delta = 40
         content = separator.join(node_content)
         if len(content) == 0:
             return ''

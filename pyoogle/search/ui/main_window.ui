@@ -215,22 +215,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>text_query</sender>
-   <signal>returnPressed()</signal>
-   <receiver>Dialog</receiver>
-   <slot>start_search()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>149</x>
-     <y>55</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>420</x>
-     <y>4</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>text_start_url</sender>
    <signal>textChanged(QString)</signal>
    <receiver>Dialog</receiver>
