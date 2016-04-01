@@ -12,14 +12,17 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor  # each downloads a website
 from queue import Queue, Empty  # For processing downloaded websites
 from http.client import RemoteDisconnected
+import logging
+from config import LOGGING_LEVEL
 
 
-from pyoogle.preprocessing.crawl.linkconstraint import LinkConstraint  # constraint to which links are allowed in the network
+from pyoogle.preprocessing.crawl.linkconstraint import LinkConstraint  # constraint to which links are allowed
 from pyoogle.preprocessing.web.net import WebNet
 from pyoogle.preprocessing.web.node import WebNode
 from pyoogle.preprocessing.web.nodestore import WebNodeStore  # for permanently saving created WebNodes
 from pyoogle.preprocessing.web.parser import WebParser  # parses the downloaded html site and extracts info
 
+logging.getLogger().setLevel(LOGGING_LEVEL)
 
 NotResolvable = "NOT_RESOLVABLE_LINK"
 
@@ -57,9 +60,9 @@ class Crawler:
             return
         website = Crawler.download_website(link, self.timeout)
         if website is None:
-            print("Website", link, "not downloaded")
+            logging.debug("Website " + str(link) + " not downloaded")
         if website is NotResolvable:
-            print("Website", link, "not resolvable and not trying again.")
+            logging.debug("Website " + str(link) + " not resolvable and not trying again.")
             return
         return self, link, website
 
@@ -71,7 +74,7 @@ class Crawler:
                 return
             if website is None:
                 # revert and try later
-                print("Website not downloaded, retrying later", link)
+                logging.debug("Website not downloaded, retrying later " + str(link))
                 self.add_link(link)
                 return
             if not self.has_maximum_sites_processed():
@@ -83,7 +86,7 @@ class Crawler:
             try:
                 link = self.pending_links.get(timeout=self.timeout)
             except Empty:
-                print("No more links found to process!")
+                logging.info("No more links found to process!")
                 return
             if link in self.already_processed_links:
                 link = None
@@ -93,7 +96,7 @@ class Crawler:
         return link
 
     def process_links(self):
-        print("Starting to process links")
+        logging.info("Starting to process links")
         try:
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 while not self._is_finished():
@@ -110,22 +113,22 @@ class Crawler:
             self.stop()  # ensure crawler is really stopped
 
     def process_website(self, link, website):
-        print("Starting to parse", link, "pending links", self.pending_links.qsize())
+        logging.debug("Starting to parse " + str(link) + " pending links " + str(self.pending_links.qsize()))
         try:
             webparser = WebParser(link, website)
         except ValueError:
-            print("Website", link, "not parsable, ignored but out link kept")
+            logging.debug("Website " + str(link) + " not parsable, ignored but out link kept")
             return
         web_hash = hash(webparser)
         if web_hash in self.already_processed_websites:
             # Already processed but with a different url, add this url to node so we know this in the future!
-            print("Website", link, "already processed (with different url)!")
+            logging.debug("Website " + str(link) + " already processed (with different url)!")
             node = self.web_net.get_by_content_hash(web_hash)
             if node is not None:
                 node.add_url(link)
             return
-        print("Processed", (self.processed_sites_count + 1), ".link", link, "pending websites",
-              self.pending_websites.qsize())
+        logging.info("Processed " + str(self.processed_sites_count + 1) + ".link " + str(link) + " pending websites " +
+                     str(self.pending_websites.qsize()))
         self.already_processed_websites.add(web_hash)
         self.processed_sites_count += 1
 
@@ -138,7 +141,7 @@ class Crawler:
 
     def process_websites(self, clear_store):
         # We are required to open the store in the same thread the store is modified in
-        print("Starting to process websites")
+        logging.info("Starting to process websites")
         with WebNodeStore(self.store_path, clear_store) as node_store:
             try:
                 while not self._is_finished():
@@ -148,7 +151,6 @@ class Crawler:
                     link, website = data
                     self.process_website(link, website)
                 node_store.save_webnodes(self.web_net.get_nodes())
-                self.web_net.refresh()
             finally:
                 self.stop()  # ensure crawler is really stopped
 
@@ -172,7 +174,7 @@ class Crawler:
                         if link not in self.already_processed_links:
                             self.add_link(link)
                             restart_link_count += 1
-                print("Restarting with", restart_link_count, "links of", total_link_out)
+                logging.info("Restarting with " + str(restart_link_count) + " links of " + str(total_link_out))
 
     def _start_async(self, clear_store):
         self._init_net(clear_store)
@@ -190,7 +192,7 @@ class Crawler:
             self.stop()
 
     def start(self, start_url, clear_store=True):
-        print("Starting crawling at", start_url)
+        logging.info("Starting crawling at " + str(start_url))
         self.is_crawling = True
         self.add_link(start_url)
         self.starting_processor = threading.Thread(target=Crawler._start_async, args=[self, clear_store])
@@ -204,7 +206,7 @@ class Crawler:
 
     def stop(self):
         if self.is_crawling:  # Race condition safe (could be executed multiple times)
-            print("Stopping crawling")
+            logging.info("Stopping crawling")
             self.is_crawling = False
             self.pending_websites.put(None)  # Ensure threads do not wait forever and exit
             self.pending_links.put(None)
@@ -212,17 +214,17 @@ class Crawler:
     @staticmethod
     def download_website(url, timeout):
         # Download and read website
-        print("Downloading website", url)
+        logging.debug("Downloading website " + str(url))
         try:
             website = urllib.request.urlopen(url, timeout=timeout).read()
         except urllib.error.URLError as err:
-            print("(Timeout) error when downloading", url, err)
+            logging.debug("(Timeout) error when downloading " + str(url) + " " + str(err))
             website = None
         except RemoteDisconnected as disc:
-            print("(RemoteDisconnect) error when downloading", url, disc)
+            logging.debug("(RemoteDisconnect) error when downloading " + str(url) + " " + str(disc))
             website = NotResolvable
         except UnicodeEncodeError:
-            print("(UnnicodeEncodeError) error when downloading", url)
+            logging.debug("(UnicodeEncodeError) error when downloading " + str(url))
             website = NotResolvable
         return website
 
@@ -236,7 +238,7 @@ def crawl_mathy():
     # Frequent candidates: '.png', '.jpg', '.jpeg', '.pdf', '.ico', '.doc', '.txt', '.gz', '.zip', '.tar','.ps',
     # '.docx', '.tex', 'gif', '.ppt', '.m', '.mw', '.mp3', '.wav', '.mp4'
     forbidden_endings = ['.pdf', '.png', '.ico', '#top']  # for fast exclusion
-    constraint.add_rule(lambda link : all((not link.lower().endswith(ending) for ending in forbidden_endings)))
+    constraint.add_rule(lambda link: all((not link.lower().endswith(ending) for ending in forbidden_endings)))
 
     # Forbid every point in the last path segment as this likely is a file and we are not interested in it
     def rule_no_point_in_last_path_segment(link_parsed):
@@ -253,8 +255,9 @@ def crawl_mathy():
     # Wait for the crawler to finish
     c.join()
     webnet = c.web_net
-    print("DONE, webnet contains", len(webnet), "nodes")
+    logging.info("DONE, webnet contains " + str(len(webnet)) + " nodes")
     return path, webnet
+
 
 def crawl_spon():
     constraint = LinkConstraint('', 'www.spiegel.de')
@@ -262,8 +265,8 @@ def crawl_spon():
     # Forbid every point in the last path segment as this likely is a file and we are not interested in it
     def rule_no_point_in_last_path_segment(link_parsed):
         split = link_parsed.path.split("/")
-        return len(split) == 0 or ("." not in split[-1]
-                                   or split[-1].lower().endswith(".html") or split[-1].lower().endswith(".htm"))
+        return len(split) == 0 or ("." not in split[-1] or
+                                   split[-1].lower().endswith(".html") or split[-1].lower().endswith(".htm"))
 
     constraint.add_rule(rule_no_point_in_last_path_segment, parsed_link=True)
     path = "/home/daniel/PycharmProjects/PageRank/spon.db"
@@ -273,7 +276,7 @@ def crawl_spon():
     # Wait for the crawler to finish
     c.join()
     webnet = c.web_net
-    print("DONE, webnet contains", len(webnet), "nodes")
+    logging.info("DONE, webnet contains " + str(len(webnet)) + " nodes")
     return path, webnet
 
 

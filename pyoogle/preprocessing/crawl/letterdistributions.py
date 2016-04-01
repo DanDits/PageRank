@@ -29,23 +29,26 @@ _LETTER_DISTRIBUTIONS = {'de': np.array((6.51, 1.89, 3.06, 5.08, 17.4, 1.66, 3.0
                                         2.361, 0.150, 1.974, 0.074, 0, 0, 0, 0)) / 100}
 
 
+def _add_letter(distribution, letter):
+    letter_index = _letter_index(letter)
+    if 0 <= letter_index < _LETTER_DISTRIBUTION_LENGTH:
+        distribution[letter_index] += 1
+
+
 def _guess_language(text):
     distribution = np.zeros(_LETTER_DISTRIBUTION_LENGTH)
     content = "".join(text).upper()
-    total_count = len(content)
-    for index in range(0, total_count):
-        letter_index = _letter_index(content[index])
-        if 0 <= letter_index < _LETTER_DISTRIBUTION_LENGTH:
-            distribution[letter_index] += 1
-    distribution /= total_count
+    for letter in content:
+        _add_letter(distribution, letter)
+    distribution /= len(content)
 
-    closest_diff = float("inf")
-    closest_language = None
-    for language in _LETTER_DISTRIBUTIONS:
-        distr = _LETTER_DISTRIBUTIONS[language]
-        diff = norm(distribution - distr)
-        print("Diff to language", language, str(diff))
-        if diff < closest_diff:
-            closest_diff = diff
-            closest_language = language
-    return closest_language
+    languages = list(_LETTER_DISTRIBUTIONS)
+    differences = [norm(distribution - _LETTER_DISTRIBUTIONS[language]) for language in languages]
+    return languages[differences.index(min(differences))]
+
+if __name__ == "__main__":
+    # de
+    print(_guess_language("Hallo ehrlich esel eigentlich. Wie geht es dir das ist eine Testnachricht. "
+                          "Du bist immer dann am besten, jedes Mal. Dein Spiegelbild ist anderen egal"))
+    # en
+    print(_guess_language("Hello whats up, this is my test message, I'm Daniel"))

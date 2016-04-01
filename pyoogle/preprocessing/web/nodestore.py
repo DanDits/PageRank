@@ -29,6 +29,9 @@ class WebNodeStore:
                                 "Importance": "INTEGER",
                                 "Title": "TEXT"}
 
+    def get_path_name(self):
+        return os.path.basename(self.database_path)
+
     def _create(self):
         cols_creation = ", ".join((key + " " + self.column_to_types[key] for key in self.column_to_types))
         cur = self.con.cursor()
@@ -139,7 +142,10 @@ class WebNodeStore:
             nodes_iter = [nodes]
         cur = self.con.cursor()
         for node in nodes_iter:
-            self._save_node(cur, node)
+            try:
+                self._save_node(cur, node)
+            except UnicodeEncodeError as ue:
+                print("Failed saving node (skipping it)", node.get_urls()[0], "because of encoding problem:", ue)
         cur.close()
 
     @staticmethod

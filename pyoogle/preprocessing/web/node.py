@@ -35,6 +35,9 @@ class WebNode:
     def get_out_links(self):
         return self.out_links
 
+    def has_node_id(self):
+        return self.node_id is not None
+
     def set_node_id(self, node_id):
         self.node_id = node_id
 
@@ -66,7 +69,7 @@ class WebNode:
         return any((url in other.urls for url in self.urls))
 
     def __hash__(self):
-        if self.node_id is None:
+        if not self.has_node_id():
             return self.get_content_hash()
         return self.node_id
 

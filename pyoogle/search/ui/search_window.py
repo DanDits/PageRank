@@ -6,6 +6,7 @@ from PyQt4.QtGui import QStandardItem
 from pyoogle.preprocessing.web.nodestore import WebNodeStore
 from pyoogle.search.request import Request
 import re
+import webbrowser
 
 
 Ui_MainWindow, WindowBaseClass = uic.loadUiType("main_window.ui")
@@ -16,21 +17,31 @@ class MyDialog(WindowBaseClass, Ui_MainWindow):
         WindowBaseClass.__init__(self, parent)
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
+        self.text_store.setText(store.get_path_name())
         self.request = Request(store)
-        self.update_language()
+        self.list_language.setCurrentIndex(self.list_language.model().index(2))
         self.max_results = 20
+        self.result = None
+
+    def node_selected(self, model_index):
+        index = model_index.row()
+        if self.result is None or index >= len(self.result):
+            return
+        node = self.result.get_node(index)
+        webbrowser.open(node.get_urls()[0])
 
     def start_search(self):
         print("Starting search", self.text_query.text())
         try:
-            result = self.request.execute(self.text_query.text())
+            self.result = self.request.execute(self.text_query.text())
         except ValueError:
             self.show_query_error()
+            self.result = None
             return
-        if len(result) == 0:
+        if self.result is None or len(self.result) == 0:
             self.show_no_results()
             return
-        self.show_result(result)
+        self.show_result()
 
     def show_no_results(self):
         model = QStandardItemModel(self.list_results)
@@ -46,7 +57,8 @@ class MyDialog(WindowBaseClass, Ui_MainWindow):
         self.list_results.setModel(model)
         self.list_results.show()
 
-    def show_result(self, result):
+    def show_result(self):
+        result = self.result
         model = QStandardItemModel(self.list_results)
         for index in range(min(len(result), self.max_results)):
             node = result.get_node(index)

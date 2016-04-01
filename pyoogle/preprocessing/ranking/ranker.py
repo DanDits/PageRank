@@ -9,21 +9,23 @@ class BaseRanker:
         self.matrix = None
         self.importances = None
 
+    def __str__(self):
+        return "Base Ranker"
+
     def rank(self, webnet, eps=1e-8, max_iter=100):
-        if not webnet.all_nodes_have_id():
-            raise ValueError("Cannot rank webnet where not all nodes have a valid id.")
-        if len(webnet) == 0:
-            print("Nothing to rank!")
-            return  # We ranked all in net perfectly!
         self.webnet = webnet
         self._init_mapping()
+        if len(self.id_to_index) == 0:
+            print("Nothing to rank!")
+            return  # We ranked all in net perfectly!
+
         self._build_matrix()
         self._calculate_importances(eps=eps, max_iter=max_iter)
         self._apply_importances()
 
     def _init_mapping(self):
         self.id_to_index = {}
-        for index, node in enumerate(self.webnet):
+        for index, node in enumerate(filter(lambda inode: inode.has_node_id(), self.webnet)):
             node_id = node.get_node_id()
             self.id_to_index[node_id] = index
 
@@ -94,6 +96,9 @@ class TeleportRanker(BaseRanker):
         super().__init__()
         self.teleport_prop = min(1., max(0., teleport_prop))
         self._matrix_size = 1
+
+    def __str__(self):
+        return "Teleport Ranker (" + str(self.teleport_prop) + ")"
 
     # noinspection PyUnresolvedReferences
     def _build_matrix(self):
