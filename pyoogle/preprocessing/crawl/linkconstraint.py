@@ -14,7 +14,7 @@ class LinkConstraint:
     def __init__(self, scheme='', netloc='', use_fragment=False):
         self.netloc = netloc
         self.scheme = scheme
-        self.use_fragment = use_fragment  # can ignore fragment (# in url) as it only directs within a website
+        self.use_fragment = use_fragment  # if false can ignore fragment (# in url) as it only directs within a website
         self.rules = []
         self.rules_parsed_link = []
 
@@ -30,20 +30,10 @@ class LinkConstraint:
             return
         if not self._is_scheme(parsed[0]):
             return
-        if self._is_rule_broken(link, False) or self._is_rule_broken(parsed, True):
+        if (not all((rule(link) for rule in self.rules)) or
+                not all((rule(parsed) for rule in self.rules_parsed_link))):
             return
         return self.normalize(link)
-
-    def _is_rule_broken(self, link, parsed_link):
-        if parsed_link:
-            rules = self.rules_parsed_link
-        else:
-            rules = self.rules
-        for rule in rules:
-            matched = rule(link)
-            if not matched:
-                return True
-        return False
 
     def _is_scheme(self, scheme):
         return not self.scheme or self.scheme == '' or self.scheme == scheme
@@ -53,7 +43,6 @@ class LinkConstraint:
 
     _REGEX_VALID_URL = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@\.&+#]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
-    # noinspection PyMethodMayBeStatic
     # noinspection PyProtectedMember
     def normalize(self, link):
         # This normalize function must be a projection; that is for all valid links it holds
@@ -85,7 +74,9 @@ class LinkConstraint:
 
 if __name__ == "__main__":
     c = LinkConstraint()
+    c.add_rule(lambda link : "math" in link)
     test_link = "http://www.math.kit.edu/iag2/~schwer/seite/yggt5/de#Physics"
+    print("Gettin valid:", c.get_valid(test_link))
     print("To normalize:", test_link)
     test_link = c.normalize(test_link)
     print("Normalized:", test_link)

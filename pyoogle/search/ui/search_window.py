@@ -17,12 +17,34 @@ class MyDialog(WindowBaseClass, Ui_MainWindow):
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
         self.request = Request(store)
+        self.update_language()
         self.max_results = 20
 
     def start_search(self):
         print("Starting search", self.text_query.text())
-        result = self.request.execute(self.text_query.text())
+        try:
+            result = self.request.execute(self.text_query.text())
+        except ValueError:
+            self.show_query_error()
+            return
+        if len(result) == 0:
+            self.show_no_results()
+            return
         self.show_result(result)
+
+    def show_no_results(self):
+        model = QStandardItemModel(self.list_results)
+        item = QStandardItem("Keine Ergebnisse. Versuche es mit einfachen Stichwörtern getrennt durch Leerzeichen.")
+        model.appendRow(item)
+        self.list_results.setModel(model)
+        self.list_results.show()
+
+    def show_query_error(self):
+        model = QStandardItemModel(self.list_results)
+        item = QStandardItem("Verbindungswörter (AND/OR/NOT) in Suche falsch gesetzt.")
+        model.appendRow(item)
+        self.list_results.setModel(model)
+        self.list_results.show()
 
     def show_result(self, result):
         model = QStandardItemModel(self.list_results)

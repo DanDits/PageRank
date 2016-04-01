@@ -15,7 +15,14 @@ def search(store, query, language, starturl, max_output):
     request = Request(store)
     request.set_language(language)
     request.set_start_url(starturl)
-    result = request.execute(query)
+    try:
+        result = request.execute(query)
+    except ValueError as v:
+        print("Searching failed.", v)
+        return
+    if len(result) == 0:
+        print("Sorry, did not find any results for your query. Try simple keywords separated by whitespace.")
+        return
     print("Exactly", len(result), "results for", "'" + query + "'", "[lang:", language, ", url:", starturl + "]")
     for index in range(0, min(len(result), max_output)):
         print(str(index + 1) + ".", result.get_node(index).get_title())

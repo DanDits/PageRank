@@ -98,7 +98,11 @@ class WebNodeStore:
                 where_clause = ''
 
             command = "SELECT * from {tn}" + where_clause + " ORDER BY Importance Desc"
-            cur.execute(command.format(tn=WebNodeStore._TABLE_NAME), tuple(where_parameters))
+            try:
+                cur.execute(command.format(tn=WebNodeStore._TABLE_NAME), tuple(where_parameters))
+            except lite.OperationalError:
+                return
+
             for row in cur.fetchall():
                 nodes.append(WebNodeStore._build_node(row, True))
             return nodes

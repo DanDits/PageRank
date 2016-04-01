@@ -21,6 +21,9 @@ from pyoogle.preprocessing.web.nodestore import WebNodeStore  # for permanently 
 from pyoogle.preprocessing.web.parser import WebParser  # parses the downloaded html site and extracts info
 
 
+NotResolvable = "NOT_RESOLVABLE_LINK"
+
+
 class Crawler:
     # Initializes the Crawler. If max_sites is greater than zero it will only
     # download this many sites and stop afterwards, else until no new site is found.
@@ -55,8 +58,8 @@ class Crawler:
         website = Crawler.download_website(link, self.timeout)
         if website is None:
             print("Website", link, "not downloaded")
-        if website is RemoteDisconnected:
-            print("Website", link, "remote disconnected, not trying again.")
+        if website is NotResolvable:
+            print("Website", link, "not resolvable and not trying again.")
             return
         return self, link, website
 
@@ -214,10 +217,13 @@ class Crawler:
             website = urllib.request.urlopen(url, timeout=timeout).read()
         except urllib.error.URLError as err:
             print("(Timeout) error when downloading", url, err)
-            return
+            website = None
         except RemoteDisconnected as disc:
             print("(RemoteDisconnect) error when downloading", url, disc)
-            website = RemoteDisconnected
+            website = NotResolvable
+        except UnicodeEncodeError:
+            print("(UnnicodeEncodeError) error when downloading", url)
+            website = NotResolvable
         return website
 
 
@@ -226,14 +232,11 @@ def crawl_mathy():
     # Build constraint that describes which outgoing WebNode links to follow
     constraint = LinkConstraint('http', 'www.math.kit.edu')
 
-    def rule_factory_forbidden_ending(_ending):
-        return lambda link: not link.lower().endswith(_ending)
-
     # Prevent downloading links with these endings
     # Frequent candidates: '.png', '.jpg', '.jpeg', '.pdf', '.ico', '.doc', '.txt', '.gz', '.zip', '.tar','.ps',
     # '.docx', '.tex', 'gif', '.ppt', '.m', '.mw', '.mp3', '.wav', '.mp4'
-    for ending in ['.pdf', '.png', '.ico', '#top']:  # for fast exclusion
-        constraint.add_rule(rule_factory_forbidden_ending(ending))
+    forbidden_endings = ['.pdf', '.png', '.ico', '#top']  # for fast exclusion
+    constraint.add_rule(lambda link : all((not link.lower().endswith(ending) for ending in forbidden_endings)))
 
     # Forbid every point in the last path segment as this likely is a file and we are not interested in it
     def rule_no_point_in_last_path_segment(link_parsed):
@@ -253,5 +256,26 @@ def crawl_mathy():
     print("DONE, webnet contains", len(webnet), "nodes")
     return path, webnet
 
+def crawl_spon():
+    constraint = LinkConstraint('', 'www.spiegel.de')
+
+    # Forbid every point in the last path segment as this likely is a file and we are not interested in it
+    def rule_no_point_in_last_path_segment(link_parsed):
+        split = link_parsed.path.split("/")
+        return len(split) == 0 or ("." not in split[-1]
+                                   or split[-1].lower().endswith(".html") or split[-1].lower().endswith(".htm"))
+
+    constraint.add_rule(rule_no_point_in_last_path_segment, parsed_link=True)
+    path = "/home/daniel/PycharmProjects/PageRank/spon.db"
+    c = Crawler(path, constraint)
+    c.start("http://www.spiegel.de", clear_store=False)
+
+    # Wait for the crawler to finish
+    c.join()
+    webnet = c.web_net
+    print("DONE, webnet contains", len(webnet), "nodes")
+    return path, webnet
+
+
 if __name__ == "__main__":
-    crawl_mathy()
+    crawl_spon()

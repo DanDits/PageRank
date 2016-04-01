@@ -54,6 +54,8 @@ class Request:
         self._parse(query)
         # Use the user query string to query the store, returns a list sorted descending by importance value
         query_nodes = self.node_store.query(self.request_tree, self.language, self.start_url)
+        if query_nodes is None:
+            raise ValueError("Joining parameters (AND/OR/NOT) in query misplaced:", query)
 
         # prioritize if keyword occurrence count in title, the more the better, if equal amount use importance
         count_to_nodes = self._calculate_count_to_nodes(query_nodes, lambda param_node: param_node.get_title())

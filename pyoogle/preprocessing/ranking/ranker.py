@@ -98,18 +98,14 @@ class TeleportRanker(BaseRanker):
     # noinspection PyUnresolvedReferences
     def _build_matrix(self):
         super()._build_matrix()
-        if self.teleport_prop > 0.:
-            self._matrix_size = self.matrix.shape[0]  # Matrix is square
+        self._matrix_size = self.matrix.shape[0]  # Matrix is square
 
     def _power_method_step(self, x):
-        next_x = super()._power_method_step(x)
-        if self.teleport_prop > 0.:
-            # The teleport matrix the ones((k, k)) matrix scaled by (self.teleport_prop / k)
-            # where k = self._matrix_size.
-            # We do not compute this full rank 1 matrix for performance reasons and use the fact that
-            # norm(x,1)=sum(x)=1
-            next_x = (1. - self.teleport_prop) * next_x + self.teleport_prop / self._matrix_size
-        return next_x
+        # The teleport matrix the ones((k, k)) matrix scaled by (self.teleport_prop / k)
+        # where k = self._matrix_size.
+        # We do not compute this full rank 1 matrix for performance reasons and use the fact that
+        # norm(x,1)=sum(x)=1
+        return (1. - self.teleport_prop) * super()._power_method_step(x) + self.teleport_prop / self._matrix_size
 
 
 if __name__ == "__main__":
