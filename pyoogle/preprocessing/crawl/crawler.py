@@ -60,9 +60,9 @@ class Crawler:
             return
         website = Crawler.download_website(link, self.timeout)
         if website is None:
-            logging.debug("Website " + str(link) + " not downloaded")
+            logging.debug("Website %s not downloaded", link)
         if website is NotResolvable:
-            logging.debug("Website " + str(link) + " not resolvable and not trying again.")
+            logging.debug("Website %s not resolvable and not trying again.", link)
             return
         return self, link, website
 
@@ -74,7 +74,7 @@ class Crawler:
                 return
             if website is None:
                 # revert and try later
-                logging.debug("Website not downloaded, retrying later " + str(link))
+                logging.debug("Website %s not downloaded, retrying later ", link)
                 self.add_link(link)
                 return
             if not self.has_maximum_sites_processed():
@@ -113,22 +113,22 @@ class Crawler:
             self.stop()  # ensure crawler is really stopped
 
     def process_website(self, link, website):
-        logging.debug("Starting to parse " + str(link) + " pending links " + str(self.pending_links.qsize()))
+        logging.debug("Starting to parse %s pending links %d", link, self.pending_links.qsize())
         try:
             webparser = WebParser(link, website)
         except ValueError:
-            logging.debug("Website " + str(link) + " not parsable, ignored but out link kept")
+            logging.debug("Website %s not parsable, ignored but out link kept", link)
             return
         web_hash = hash(webparser)
         if web_hash in self.already_processed_websites:
             # Already processed but with a different url, add this url to node so we know this in the future!
-            logging.debug("Website " + str(link) + " already processed (with different url)!")
+            logging.debug("Website %s already processed (with different url)!", link)
             node = self.web_net.get_by_content_hash(web_hash)
             if node is not None:
                 node.add_url(link)
             return
-        logging.info("Processed " + str(self.processed_sites_count + 1) + ".link " + str(link) + " pending websites " +
-                     str(self.pending_websites.qsize()))
+        logging.info("Processed %d.link %s pending websites %d",
+                     self.processed_sites_count + 1, link, self.pending_websites.qsize())
         self.already_processed_websites.add(web_hash)
         self.processed_sites_count += 1
 
@@ -174,7 +174,7 @@ class Crawler:
                         if link not in self.already_processed_links:
                             self.add_link(link)
                             restart_link_count += 1
-                logging.info("Restarting with " + str(restart_link_count) + " links of " + str(total_link_out))
+                logging.info("Restarting with %d links of %d", restart_link_count, total_link_out)
 
     def _start_async(self, clear_store):
         self._init_net(clear_store)
@@ -192,7 +192,7 @@ class Crawler:
             self.stop()
 
     def start(self, start_url, clear_store=True):
-        logging.info("Starting crawling at " + str(start_url))
+        logging.info("Starting crawling at %s", start_url)
         self.is_crawling = True
         self.add_link(start_url)
         self.starting_processor = threading.Thread(target=Crawler._start_async, args=[self, clear_store])
@@ -214,17 +214,24 @@ class Crawler:
     @staticmethod
     def download_website(url, timeout):
         # Download and read website
-        logging.debug("Downloading website " + str(url))
+        logging.debug("Downloading website %s", url)
         try:
             website = urllib.request.urlopen(url, timeout=timeout).read()
+        except urllib.error.HTTPError as err:
+            if int(err.code / 100) == 4:
+                logging.debug("Client http error when downloading %s %s", url, err)
+                website = NotResolvable  # 404 Not Found or other Client Error, ignore link in future
+            else:
+                logging.debug("HTTP Error when downloading %d %s %s", err.code, url, err)
+                website = None
         except urllib.error.URLError as err:
-            logging.debug("(Timeout) error when downloading " + str(url) + " " + str(err))
+            logging.debug("(Timeout) url error when downloading %s %s", url, err)
             website = None
         except RemoteDisconnected as disc:
-            logging.debug("(RemoteDisconnect) error when downloading " + str(url) + " " + str(disc))
+            logging.debug("(RemoteDisconnect) error when downloading %s %s", url, disc)
             website = NotResolvable
         except UnicodeEncodeError:
-            logging.debug("(UnicodeEncodeError) error when downloading " + str(url))
+            logging.debug("(UnicodeEncodeError) error when downloading %s", url)
             website = NotResolvable
         return website
 
@@ -255,7 +262,7 @@ def crawl_mathy():
     # Wait for the crawler to finish
     c.join()
     webnet = c.web_net
-    logging.info("DONE, webnet contains " + str(len(webnet)) + " nodes")
+    logging.info("DONE, webnet contains %d nodes", len(webnet))
     return path, webnet
 
 
@@ -276,7 +283,7 @@ def crawl_spon():
     # Wait for the crawler to finish
     c.join()
     webnet = c.web_net
-    logging.info("DONE, webnet contains " + str(len(webnet)) + " nodes")
+    logging.info("DONE, webnet contains %d nodes", len(webnet))
     return path, webnet
 
 
