@@ -5,17 +5,16 @@ Created on Sat Feb  6 12:49:02 2016
 @author: daniel
 """
 
+import logging
 import threading  # For main processing thread
 import urllib  # For downloading websites
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor  # each downloads a website
-from queue import Queue, Empty  # For processing downloaded websites
 from http.client import RemoteDisconnected
-import logging
-from config import LOGGING_LEVEL
+from queue import Queue, Empty  # For processing downloaded websites
 
-
+from pyoogle.config import LOGGING_LEVEL
 from pyoogle.preprocessing.crawl.linkconstraint import LinkConstraint  # constraint to which links are allowed
 from pyoogle.preprocessing.web.net import WebNet
 from pyoogle.preprocessing.web.node import WebNode
@@ -254,7 +253,7 @@ def crawl_mathy():
     constraint.add_rule(rule_no_point_in_last_path_segment, parsed_link=True)
 
     # Start the crawler from a start domain, optionally loading already existing nodes
-    from config import DATABASE_PATH
+    from pyoogle.config import DATABASE_PATH
     path = DATABASE_PATH
     c = Crawler(path, constraint)
     c.start("http://www.math.kit.edu", clear_store=False)

@@ -1,7 +1,6 @@
+from pyoogle.config import DATABASE_PATH
 from pyoogle.preprocessing.web.nodestore import WebNodeStore
-
 from pyoogle.search.request import Request
-from config import DATABASE_PATH
 
 
 def safe_to_int(text, default_value):

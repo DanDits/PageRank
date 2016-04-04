@@ -1,13 +1,13 @@
-from PyQt4 import uic
-from PyQt4 import QtGui
-from PyQt4.QtGui import QStandardItemModel
-from PyQt4.QtGui import QStandardItem
-
-from pyoogle.preprocessing.web.nodestore import WebNodeStore
-from pyoogle.search.request import Request
 import re
 import webbrowser
 
+from PyQt4 import QtGui
+from PyQt4 import uic
+from PyQt4.QtGui import QStandardItem
+from PyQt4.QtGui import QStandardItemModel
+
+from pyoogle.preprocessing.web.nodestore import WebNodeStore
+from pyoogle.search.request import Request
 
 Ui_MainWindow, WindowBaseClass = uic.loadUiType("main_window.ui")
 
@@ -100,5 +100,5 @@ def create_and_run(database_path):
         app.exec_()
 
 if __name__ == "__main__":
-    from config import DATABASE_PATH
+    from pyoogle.config import DATABASE_PATH
     create_and_run(DATABASE_PATH)

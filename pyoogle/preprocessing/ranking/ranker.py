@@ -118,7 +118,7 @@ if __name__ == "__main__":
     print("Starting ranking webnet.")
     from pyoogle.preprocessing.web.nodestore import WebNodeStore
     from pyoogle.preprocessing.web.net import WebNet
-    from config import DATABASE_PATH
+    from pyoogle.config import DATABASE_PATH
     with WebNodeStore(database_path=DATABASE_PATH) as store:
         loaded_webnet = WebNet()
         for loaded_node in store.load_webnodes(load_content=False):

@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 
-from pyoogle.search.result import Result
 import pyoogle.search.parse as parse
+from pyoogle.search.result import Result
 
 
 class Request:
@@ -80,7 +80,7 @@ class Request:
 
 if __name__ == "__main__":
     from pyoogle.preprocessing.web.nodestore import WebNodeStore
-    from config import DATABASE_PATH
+    from pyoogle.config import DATABASE_PATH
     with WebNodeStore(DATABASE_PATH) as store:
         request = Request(store)
         result = request.execute("IWRMM lang:de")
