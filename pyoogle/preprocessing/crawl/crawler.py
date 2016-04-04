@@ -13,6 +13,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor  # each downloads a website
 from http.client import RemoteDisconnected
 from queue import Queue, Empty  # For processing downloaded websites
+from socket import timeout as socket_timeout
 
 from pyoogle.config import LOGGING_LEVEL
 from pyoogle.preprocessing.crawl.linkconstraint import LinkConstraint  # constraint to which links are allowed
@@ -216,6 +217,9 @@ class Crawler:
         logging.debug("Downloading website %s", url)
         try:
             website = urllib.request.urlopen(url, timeout=timeout).read()
+        except socket_timeout:
+            logging.debug("Timeout error when downloading %s", url)
+            website = None
         except urllib.error.HTTPError as err:
             if int(err.code / 100) == 4:
                 logging.debug("Client http error when downloading %s %s", url, err)
@@ -224,7 +228,7 @@ class Crawler:
                 logging.debug("HTTP Error when downloading %d %s %s", err.code, url, err)
                 website = None
         except urllib.error.URLError as err:
-            logging.debug("(Timeout) url error when downloading %s %s", url, err)
+            logging.debug("Url error when downloading %s %s", url, err)
             website = None
         except RemoteDisconnected as disc:
             logging.debug("(RemoteDisconnect) error when downloading %s %s", url, disc)

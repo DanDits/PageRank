@@ -37,6 +37,8 @@ class BaseRanker:
         # noinspection PyPep8Naming
         M = lil_matrix((nodes_count, nodes_count))
         rows_without_out_links = []
+        self.webnet.build_url_index()
+        print("Starting to build matrix. Url index built.")
         for index, node in enumerate(self.webnet):
             out_links = node.get_out_links()
             if out_links is not None:
@@ -51,6 +53,7 @@ class BaseRanker:
                     M[index, :] /= out_count
                 else:
                     rows_without_out_links.append(index)
+            print("Got ", index, "/", len(self.webnet))
 
         # In case some nodes do not have any edges there is a zero row in the matrix which we do not want.
         # Therefore teleport to a random node by filling this row with ones
@@ -80,6 +83,8 @@ class BaseRanker:
             if diff < eps:
                 print("Converged at step", index, "with eps=", eps)
                 break  # Converged, stop
+            else:
+                print("At step", index, "diff=", diff)
         self.importances = x
 
     def _power_method_step(self, x):

@@ -1,5 +1,6 @@
 import re
 import webbrowser
+import time
 
 from PyQt4 import QtGui
 from PyQt4 import uic
@@ -31,7 +32,7 @@ class MyDialog(WindowBaseClass, Ui_MainWindow):
         webbrowser.open(node.get_urls()[0])
 
     def start_search(self):
-        print("Starting search", self.text_query.text())
+        start_time = time.time()
         try:
             self.result = self.request.execute(self.text_query.text())
         except ValueError:
@@ -41,26 +42,24 @@ class MyDialog(WindowBaseClass, Ui_MainWindow):
         if self.result is None or len(self.result) == 0:
             self.show_no_results()
             return
-        self.show_result()
+        self.show_result(time.time() - start_time)
 
     def show_no_results(self):
-        model = QStandardItemModel(self.list_results)
-        item = QStandardItem("Keine Ergebnisse. Versuche es mit einfachen Stichwörtern getrennt durch Leerzeichen.")
-        model.appendRow(item)
-        self.list_results.setModel(model)
-        self.list_results.show()
+        self.set_results_heading_text("Keine Ergebnisse. Versuche es mit einfachen Stichwörtern "
+                                      "getrennt durch Leerzeichen.")
+        self.list_results.hide()
 
     def show_query_error(self):
-        model = QStandardItemModel(self.list_results)
-        item = QStandardItem("Verbindungswörter (AND/OR/NOT) in Suche falsch gesetzt.")
-        model.appendRow(item)
-        self.list_results.setModel(model)
-        self.list_results.show()
+        self.set_results_heading_text("Verbindungswörter (AND/OR/NOT) in Suche falsch gesetzt.")
+        self.list_results.hide()
 
-    def show_result(self):
+    def set_results_heading_text(self, text):
+        self.text_results_heading.setText(text)
+
+    def show_result(self, search_time):
+        self.set_results_heading_text("{} Ergebnisse in {:.2f} Sekunden".format(len(self.result), search_time))
         result = self.result
         model = QStandardItemModel(self.list_results)
-        print("Showing results", len(result))
         for index in range(min(len(result), self.max_results)):
             node = result.get_node(index)
             context = result.get_context(index)

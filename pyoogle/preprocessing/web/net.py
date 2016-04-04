@@ -23,7 +23,7 @@ class WebNet:
             if node.get_content_hash() == content_hash:
                 return node
 
-    def get_by_url(self, url):
+    def get_by_url(self, url, extend_index=False):
         if url is None:
             return
         node = self.url_to_nodes.get(url)
@@ -32,6 +32,12 @@ class WebNet:
         # Now brute force search
         for node in self.get_nodes():
             if url in node.get_urls():
-                # Map url to node (maybe it is common)
-                self.url_to_nodes[url] = node
+                if extend_index:
+                    # Map url to node (maybe it is common)
+                    self.url_to_nodes[url] = node
                 return node
+
+    def build_url_index(self):
+        for node in self.get_nodes():
+            for url in node.get_urls():
+                self.url_to_nodes[url] = node

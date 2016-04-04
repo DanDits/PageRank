@@ -166,6 +166,16 @@
     </layout>
    </item>
    <item>
+    <widget class="QLabel" name="text_results_heading">
+     <property name="text">
+      <string>Results</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QListView" name="list_results">
      <property name="minimumSize">
       <size>
